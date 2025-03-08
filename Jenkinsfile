@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Ensure Jenkins uses correct SonarScanner path
-        SONAR_HOST_URL = "http://your-sonarqube-server:9000"     // Replace with your SonarQube server IP/domain
-        SONAR_PROJECT_KEY = "example-repo"                      // Replace with your actual project key
-        SONARQUBE_TOKEN = "your-sonarqube-token"                // Replace with your actual SonarQube token
+        SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Correct scanner path
+        SONAR_HOST_URL = "http://localhost:9000"               // Update with SonarQube server IP if needed
+        SONAR_PROJECT_KEY = "example-repo"                     // Replace with actual project key
+        SONARQUBE_TOKEN = "your-sonarqube-token"               // Replace with actual SonarQube token
     }
 
     stages {
@@ -18,7 +18,12 @@ pipeline {
         stage('Code Analysis') {
             steps {
                 script {
-                    sh '$SONAR_SCANNER -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONARQUBE_TOKEN'
+                    sh """
+                        ${env.SONAR_SCANNER} \
+                        -Dsonar.projectKey=${env.SONAR_PROJECT_KEY} \
+                        -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                        -Dsonar.login=${env.SONARQUBE_TOKEN}
+                    """
                 }
             }
         }
@@ -38,11 +43,28 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    sleep(10)  // Give SonarQube time to analyze results
-                    def sonarStatus = sh(script: "curl -s -u $SONARQUBE_TOKEN: $SONAR_HOST_URL/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY", returnStdout: true).trim()
-                    echo "SonarQube Response: $sonarStatus"
-                    if (sonarStatus.contains('"status":"ERROR"')) {
-                        error "❌ Quality Gate failed! Fix issues before proceeding."
+                    echo "⏳ Waiting for SonarQube analysis to complete..."
+                    sleep(10)  // Allow time for SonarQube to analyze the results
+
+                    def qualityGateStatus = ""
+                    for (int i = 0; i < 5; i++) {  // Retry for up to 50 seconds
+                        def sonarResponse = sh(script: """
+                            curl -s -u ${env.SONARQUBE_TOKEN}: ${env.SONAR_HOST_URL}/api/qualitygates/project_status?projectKey=${env.SONAR_PROJECT_KEY}
+                        """, returnStdout: true).trim()
+                        
+                        echo "SonarQube Response: ${sonarResponse}"
+                        
+                        qualityGateStatus = sh(script: "echo '${sonarResponse}' | jq -r '.projectStatus.status'", returnStdout: true).trim()
+                        
+                        if (qualityGateStatus == "OK") {
+                            echo "✅ Quality Gate passed!"
+                            break
+                        } else if (qualityGateStatus == "ERROR") {
+                            error "❌ Quality Gate failed! Fix issues before proceeding."
+                        }
+                        
+                        echo "🔄 Retrying in 10s..."
+                        sleep(10)
                     }
                 }
             }
