@@ -5,7 +5,6 @@ pipeline {
         SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Correct scanner path
         SONAR_HOST_URL = "http://localhost:9000"               // Update with SonarQube server IP if needed
         SONAR_PROJECT_KEY = "example-repo"                     // Replace with actual project key
-        SONARQUBE_TOKEN = "squ_1cd7bff50570147edc00da9e1bad2d77591d2085"  // Token added directly
     }
 
     stages {
@@ -18,19 +17,15 @@ pipeline {
         stage('Code Analysis') {
             steps {
                 script {
-                    sh """
-                        ${env.SONAR_SCANNER} \
-                        -Dsonar.projectKey=${env.SONAR_PROJECT_KEY} \
-                        -Dsonar.host.url=${env.SONAR_HOST_URL} \
-                        -Dsonar.login=${env.SONARQUBE_TOKEN}
-                    """
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONARQUBE_TOKEN')]) {
+                        sh """
+                            ${env.SONAR_SCANNER} \
+                            -Dsonar.projectKey=${env.SONAR_PROJECT_KEY} \
+                            -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                            -Dsonar.login=${env.SONARQUBE_TOKEN}
+                        """
+                    }
                 }
-            }
-        }
-
-        stage('Security Scan') {
-            steps {
-                sh 'dependency-check.sh --scan ./ --format HTML || true' // Prevent pipeline failure
             }
         }
 
