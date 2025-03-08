@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Correct sonar-scanner path
-        SONAR_HOST_URL = "http://your-sonarqube-server:9000"  // SonarQube server URL (Remote)
+        SONAR_HOST_URL = "http://localhost:9000"  // SonarQube server URL (Remote)
         SONAR_PROJECT_KEY = "example-repo"                     // Replace with your actual SonarQube project key
         SONARQUBE_TOKEN = "squ_1cd7bff50570147edc00da9e1bad2d77591d2085"  // SonarQube authentication token
     }
