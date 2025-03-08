@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Correct scanner path
-        SONAR_HOST_URL = "http://localhost:9000"               // Update with SonarQube server IP if needed
-        SONAR_PROJECT_KEY = "example-repo"                     // Replace with actual project key
-        SONARQUBE_TOKEN = "squ_1cd7bff50570147edc00da9e1bad2d77591d2085"  // Token added directly
+        SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Correct sonar-scanner path
+        SONAR_HOST_URL = "http://your-sonarqube-server:9000"  // SonarQube server URL (Remote)
+        SONAR_PROJECT_KEY = "example-repo"                     // Replace with your actual SonarQube project key
+        SONARQUBE_TOKEN = "squ_1cd7bff50570147edc00da9e1bad2d77591d2085"  // SonarQube authentication token
     }
 
     stages {
@@ -18,6 +18,7 @@ pipeline {
         stage('Code Analysis') {
             steps {
                 script {
+                    // Run SonarQube scan
                     sh """
                         ${env.SONAR_SCANNER} \
                         -Dsonar.projectKey=${env.SONAR_PROJECT_KEY} \
@@ -30,7 +31,8 @@ pipeline {
 
         stage('Testing') {
             steps {
-                sh 'mvn test'
+                // Run your tests (adjust according to your build tool, e.g., Maven, Gradle)
+                sh 'mvn test'  // Replace with your specific test command if needed
             }
         }
 
@@ -38,7 +40,6 @@ pipeline {
             steps {
                 script {
                     echo "⏳ Waiting for SonarQube analysis to complete..."
-                    sleep(10)  // Allow time for SonarQube to analyze the results
 
                     def qualityGateStatus = ""
                     for (int i = 0; i < 5; i++) {  // Retry for up to 50 seconds
@@ -57,7 +58,7 @@ pipeline {
                             error "❌ Quality Gate failed! Fix issues before proceeding."
                         }
                         
-                        echo "🔄 Retrying in 10s..."
+                        echo "🔄 Retrying in 10 seconds..."
                         sleep(10)
                     }
                 }
