@@ -5,7 +5,7 @@ pipeline {
         SONAR_SCANNER = "/opt/sonar-scanner/bin/sonar-scanner"  // Correct scanner path
         SONAR_HOST_URL = "http://localhost:9000"               // Update with SonarQube server IP if needed
         SONAR_PROJECT_KEY = "example-repo"                     // Replace with actual project key
-        SONARQUBE_TOKEN = "your-sonarqube-token"               // Replace with actual SonarQube token
+        SONARQUBE_TOKEN = "squ_1cd7bff50570147edc00da9e1bad2d77591d2085"  // Token added directly
     }
 
     stages {
